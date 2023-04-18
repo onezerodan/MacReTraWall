@@ -1,0 +1,72 @@
+#!/bin/bash
+resolution=$(system_profiler SPDisplaysDataType |
+	grep Resolution |
+	awk -v OFS=',' '/Resolution/{print $2$3$4}')
+width="${resolution%%x*}"
+height="${resolution#*x}"
+
+imageScale=20
+
+backgroundColor="#202020"
+backgroundFile="/tmp/background-${resolution}.png"
+
+if [ ! -f "$backgroundFile" ]; then
+	convert -size $resolution xc:$backgroundColor $backgroundFile
+fi
+
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-i | --image)
+		inputFile="$2"
+		shift # past argument
+		shift # past value
+		;;
+	-o | --output)
+		outputFile="$2"
+		shift # past argument
+		shift # past value
+		;;
+	-s | --scale)
+		imageScale="$2"
+		shift
+		shift
+		;;
+
+	--default)
+		DEFAULT=YES
+		shift # past argument
+		;;
+	-* | --*)
+		echo "Unknown option $1"
+		exit 1
+		;;
+	*)
+		POSITIONAL_ARGS+=("$1") # save positional arg
+		shift                   # past argument
+		;;
+	esac
+done
+
+if [ ! -f "$inputFile" ]; then
+	echo "Specify correct image."
+	exit
+fi
+
+inputFilename=$(basename -- "$inputFile")
+inputFilename="${inputFilename%.*}"
+
+if [ -z "$outputFile" ]; then
+	outputFile="$inputFilename-grey.png"
+fi
+
+convertedWidth=$((width * imageScale / 100))
+convertedHeight=$((height * imageScale / 100))
+
+tmpOverlayFile="/tmp/$inputFilename-overlay.png"
+
+convert $inputFile -resize ${convertedWidth}x${convertedHeight} $tmpOverlayFile
+
+convert -size $resolution -set colorspace sRGB -composite -gravity center -depth 8 $backgroundFile $tmpOverlayFile $outputFile
+echo "$outputFile"
