@@ -1,4 +1,17 @@
 #!/bin/bash
+
+Help() {
+	# Display Help
+	echo "You must specify image. Other options are optional."
+	echo
+	echo "Syntax: mrtw [-i|o|s]"
+	echo "options:"
+	echo "-i, --image     Specify input image."
+	echo "-o, --output     Specify output image."
+	echo "-s, --scale     Specify % input image will be scaled by."
+	echo
+}
+
 resolution=$(system_profiler SPDisplaysDataType |
 	grep Resolution |
 	awk -v OFS=',' '/Resolution/{print $2$3$4}')
@@ -37,6 +50,10 @@ while [[ $# -gt 0 ]]; do
 	--default)
 		DEFAULT=YES
 		shift # past argument
+		;;
+	-h | --help)
+		Help
+		exit 1
 		;;
 	-* | --*)
 		echo "Unknown option $1"
